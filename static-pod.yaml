@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unifi-controller
+spec:
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  volumes:
+  - name: var-lib-mongodb
+    hostPath:
+      path: /srv/unifi-controller/var-lib-mongodb/
+      type: Directory
+  - name: var-lib-unifi
+    hostPath:
+      path: /srv/unifi-controller/var-lib-unifi/
+      type: Directory
+  containers:
+    - name: unifi
+      image: quay.io/rbo/unifi-controller:latest
+      securityContext:
+        privileged: true
+      command:
+      - /bin/sh
+      - -c
+      - |
+        chown -R unifi /var/lib/unifi /var/log/unifi /var/run/unifi
+        service unifi start &&
+        tail -f /var/log/unifi/server.log 
+      volumeMounts:
+      - name: var-lib-mongodb
+        mountPath: /var/lib/mongodb/
+      - name: var-lib-unifi
+        mountPath: /var/lib/unifi/
+      ports:
+        - name: http
+          containerPort: 8443
+          hostPort: 8443
+          protocol: TCP
